@@ -4,6 +4,8 @@ import graphqlHttp from 'express-graphql';
 import { buildSchema } from 'graphql'
 import mongoose from 'mongoose';
 
+import Event from './models/event';
+
 var app = express();
 
 const events = [];
@@ -43,16 +45,31 @@ app.use('/graphql', graphqlHttp({
         }
     `),
     rootValue: {
-        events() {
-            return events;
-        },
-        createEvent(args) {
-            const event = {
-                _id: Math.random().toString(),
-                ...args.data
+        async events() {
+            try {
+                let allEvents = Event.find();
+                return allEvents;
+            } catch (e) {
+                console.log(e);
+                throw new Error(e);
             }
-            events.push(event);
-            return event;
+        },
+        async createEvent(args) {
+            try {
+                console.log(args.data.date)
+                const event = new Event({
+                    ...args.data,
+                    date: new Date(args.data.date)
+                });
+                let eventSaved = await event.save();
+                console.log(eventSaved)
+                return eventSaved;
+            } catch (e) {
+                console.log(e);
+                throw new Error(e);
+            }
+
+
         }
     },
     graphiql: true,
@@ -60,7 +77,7 @@ app.use('/graphql', graphqlHttp({
 
 //Connect db to the application
 
-mongoose.connect('mongodb://localhost:27017/graphql-events', { useNewUrlParser: true })
+mongoose.connect(`mongodb://localhost:27017/${process.env.MONGO_DB}`, { useNewUrlParser: true })
     .then(() => {
         app.listen(3000, () => {
             console.log("Server is up and running");
