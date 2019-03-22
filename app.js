@@ -2,20 +2,39 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import graphqlHttp from 'express-graphql';
 import { buildSchema } from 'graphql'
+import mongoose from 'mongoose';
 
 var app = express();
+
+const events = [];
 
 // Using Middlewares
 app.use(bodyParser.json());
 
 app.use('/graphql', graphqlHttp({
     schema: buildSchema(`
+
+        type Event {
+            _id: ID!
+            title: String!
+            description: String!
+            price: Float!
+            date: String!
+        }
+
+        input EventInput {
+            title: String!
+            description: String!
+            price: Float!
+            date: String!
+        }
+
         type RootQuery {
-            events: [String!]!
+            events: [Event!]!
         }
 
         type RootMutation {
-            createEvent(name: String!): String!
+            createEvent(data: EventInput!): Event!
         }
 
         schema {
@@ -25,20 +44,27 @@ app.use('/graphql', graphqlHttp({
     `),
     rootValue: {
         events() {
-            return ["Aaaaa", "Da ti dam", "Plamen od ljubavi"];
+            return events;
         },
         createEvent(args) {
-            return args.name
+            const event = {
+                _id: Math.random().toString(),
+                ...args.data
+            }
+            events.push(event);
+            return event;
         }
     },
     graphiql: true,
 }))
 
-app.get('/test', (req, res, next) => {
-    console.log("IT WORKS")
-    res.json({ works: "Hello" })
-})
+//Connect db to the application
 
-app.listen(3000, () => {
-    console.log("Server is up and running");
-})
+mongoose.connect('mongodb://localhost:27017/graphql-events', { useNewUrlParser: true })
+    .then(() => {
+        app.listen(3000, () => {
+            console.log("Server is up and running");
+        })
+    }).catch(err => {
+        console.log(err);
+    })
