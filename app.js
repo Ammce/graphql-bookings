@@ -3,12 +3,12 @@ import bodyParser from 'body-parser';
 import graphqlHttp from 'express-graphql';
 import { buildSchema } from 'graphql'
 import mongoose from 'mongoose';
+import bcrypt from 'bcrypt';
 
 import Event from './models/event';
+import User from './models/user';
 
 var app = express();
-
-const events = [];
 
 // Using Middlewares
 app.use(bodyParser.json());
@@ -22,13 +22,27 @@ app.use('/graphql', graphqlHttp({
             description: String!
             price: Float!
             date: String!
+            creator: User!
+        }
+
+        type User {
+            _id: ID!,
+            email: String!,
+            password: String,
+
         }
 
         input EventInput {
             title: String!
             description: String!
             price: Float!
-            date: String!
+            date: String!,
+            creator: String!,
+        }
+
+        input UserInput {
+            email: String!,
+            password: String!,
         }
 
         type RootQuery {
@@ -36,7 +50,8 @@ app.use('/graphql', graphqlHttp({
         }
 
         type RootMutation {
-            createEvent(data: EventInput!): Event!
+            createEvent(data: EventInput!): Event!,
+            createUser(data: UserInput): User!,
         }
 
         schema {
@@ -62,14 +77,35 @@ app.use('/graphql', graphqlHttp({
                     date: new Date(args.data.date)
                 });
                 let eventSaved = await event.save();
-                console.log(eventSaved)
+                let findCreator = await User.findOneAndUpdate({ _id: "5c9ab6d210ace82f6378b4c9" }, { $push: { createdEvents: eventSaved } }, { safe: true, upsert: true });
+                if (findCreator) {
+                    findCreator.createdEvents.push(eventSaved);
+                }
                 return eventSaved;
             } catch (e) {
                 console.log(e);
                 throw new Error(e);
             }
-
-
+        },
+        async createUser(args) {
+            let { email, password } = args.data;
+            try {
+                let findUser = await User.findOne({ email: email });
+                if (findUser) {
+                    throw new Error("Email is already taken");
+                }
+                let hashedPassword = await bcrypt.hash(password, 12);
+                let user = new User({
+                    email,
+                    password: hashedPassword
+                });
+                let savedUser = await user.save();
+                savedUser.password = null;
+                return savedUser;
+            } catch (e) {
+                console.log(e);
+                throw new Error(e);
+            }
         }
     },
     graphiql: true,
