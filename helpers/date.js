@@ -1,0 +1,1 @@
+exports.dateToStringHelper = date => new Date(date).toISOString();
