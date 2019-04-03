@@ -39,9 +39,16 @@ export default buildSchema(`
             password: String!,
         }
 
+        type AuthData {
+            token: String!,
+            userId: ID!,
+            tokenExpiration: Int!,
+        }
+
         type RootQuery {
             events: [Event!]!,
             bookings: [Booking!]!,
+            login(email: String, password: String!): AuthData!
         }
 
         type RootMutation {
@@ -50,7 +57,7 @@ export default buildSchema(`
             createBooking(eventId: ID!): Booking!,
             cancelBooking(bookingId: ID!): Event!
         }
-        
+
         schema {
             query: RootQuery
             mutation: RootMutation
