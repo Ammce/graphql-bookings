@@ -3,8 +3,6 @@ import User from '../models/user';
 import { dateToStringHelper } from '../helpers/date';
 import { transformEvent } from './merge';
 
-let customUserId = "5c9ab6d210ace82f6378b4c9";
-
 export default {
     async events() {
         try {
@@ -23,10 +21,11 @@ export default {
         try {
             const event = new Event({
                 ...args.data,
-                date: dateToStringHelper(args.data.date)
+                date: dateToStringHelper(args.data.date),
+                creator: req.userId
             });
             let eventSaved = await event.save();
-            let findCreator = await User.findOneAndUpdate({ _id: customUserId }, { $push: { createdEvents: eventSaved } }, { safe: true, upsert: true });
+            let findCreator = await User.findOneAndUpdate({ _id: req.userId }, { $push: { createdEvents: eventSaved } }, { safe: true, upsert: true });
             // if (findCreator) {
             //     findCreator.createdEvents.push(eventSaved);
             // }

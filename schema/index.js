@@ -31,7 +31,7 @@ export default buildSchema(`
             description: String!
             price: Float!
             date: String!,
-            creator: String!,
+            creator: String,
         }
 
         input UserInput {
