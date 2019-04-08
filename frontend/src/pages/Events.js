@@ -3,6 +3,8 @@ import React, { Component, Fragment } from 'react';
 import Modal from '../components/Modal/Modal';
 import CreateEventForm from '../components/Events/CreateEvent';
 import AuthContext from '../context/auth-context';
+import { Card } from 'primereact/card'
+import { Growl } from 'primereact/growl';
 
 
 class Events extends Component {
@@ -84,6 +86,9 @@ class Events extends Component {
                     return {
                         events: [...prevState.events, resData.data.createEvent]
                     }
+                }, () => {
+                    this.closeModal();
+                    this.showSuccess(resData.data.createEvent);
                 })
             })
             .catch(err => {
@@ -129,11 +134,17 @@ class Events extends Component {
             });
     }
 
+    showSuccess = (data) => {
+        this.growl.show({ severity: 'success', summary: 'Event Created', detail: `Event ${data.title} is created now` });
+    }
+
     render() {
-        console.log(this.state);
-        let eventsList = this.state.events.map(event => <li key={event._id}>{event.title}</li>)
+        let eventsList = this.state.events.map(event => <Card key={event._id}>
+            <h5>{event.title}</h5>
+        </Card>)
         return (
             <Fragment>
+                <Growl ref={(el) => this.growl = el} />
                 <div>
                     {this.context.token && <button onClick={this.openModal}>Create Event</button>}
                     <Modal
@@ -155,9 +166,7 @@ class Events extends Component {
                 </div>
                 <div>
                     <h1>See list of events bellow</h1>
-                    <ul>
-                        {eventsList}
-                    </ul>
+                    {eventsList}
                 </div>
             </Fragment>
         );
